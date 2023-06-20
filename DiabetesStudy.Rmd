@@ -1,0 +1,347 @@
+---
+title: "math 449 final project"
+author: "Hana Oshima and Ishmael Gravatt"
+date: "2023-05-11"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+#### 1. State the problem and describe the data set
+
+##### Diabetes is a chronic medical condition that occurs when the body is unable to regulate blood sugar levels effectively. The primary hormone responsible for controlling blood sugar (glucose) is called insulin, which is produced by the pancreas. There are two main types of diabetes:
+
+##### 1. Type 1 diabetes: This type occurs when the body's immune system mistakenly attacks and destroys the insulin-producing cells in the pancreas. As a result, individuals with type 1 diabetes require insulin injections or an insulin pump to manage their blood sugar levels.
+
+##### 2. Type 2 diabetes: This type is characterized by the body's inability to use insulin properly (insulin resistance) or insufficient production of insulin. Type 2 diabetes is commonly associated with lifestyle factors such as poor diet, sedentary lifestyle, obesity, and genetic predisposition.
+
+##### Diabetes is a significant health problem due to several reasons:
+
+##### 1. High blood sugar levels: In diabetes, the inability to regulate blood sugar leads to persistent high levels of glucose in the bloodstream. Over time, this can damage various organs and systems in the body, such as the heart, blood vessels, kidneys, eyes, and nerves.
+
+##### 2. Cardiovascular complications: Diabetes increases the risk of cardiovascular problems, including heart disease, stroke, and peripheral arterial disease. High blood sugar levels, along with other factors associated with diabetes, contribute to the development of atherosclerosis (hardening and narrowing of the arteries), leading to these complications.
+
+##### 3. Kidney damage: Elevated blood sugar levels can damage the kidneys, impairing their ability to filter waste and excess fluids from the blood. This condition, known as diabetic nephropathy, can progress to chronic kidney disease and ultimately require dialysis or kidney transplantation.
+
+##### 4. Nerve damage: Persistently high blood sugar levels can cause nerve damage, known as diabetic neuropathy. It commonly affects the feet and legs and can lead to pain, tingling, numbness, and even ulcers or infections. In severe cases, neuropathy can affect other organs, such as the digestive system or the heart.
+
+##### 5. Eye complications: Diabetes increases the risk of eye problems, including diabetic retinopathy, cataracts, and glaucoma. Diabetic retinopathy is a leading cause of blindness in adults and occurs due to damage to the blood vessels in the retina, the light-sensitive tissue at the back of the eye.
+
+##### 6. Impact on quality of life: Managing diabetes requires constant monitoring of blood sugar levels, medication or insulin administration, dietary modifications, regular exercise, and lifestyle adjustments. The condition can significantly impact a person's daily life, causing physical and emotional challenges.
+
+##### It is important to note that diabetes is a complex condition, and its management involves a multidisciplinary approach, including healthcare professionals, proper education, regular medical check-ups, and a commitment to maintaining a healthy lifestyle.
+
+##### This dataset is originally from the National Institute of Diabetes and Digestive and Kidney
+Diseases. The objective of the dataset is to diagnostically predict whether a patient has diabetes, based on certain diagnostic measurements included in the dataset. Several constraints were placed on the selection of these instances from a larger database. In particular, all patients here are females at least 21 years old of Pima Indian heritage. From the data set in the (.csv) File We can find several variables, some of them are independent (several medical predictor variables) and only one target dependent variable (Outcome).
+
+
+##### load data
+```{r}
+library(readr)
+diab <- read_csv('/Users/hanaoshima/Downloads/diabetes2.csv')
+
+head(diab)
+```
+
+#### 2. Fit a logistic regression model with all predictors
+
+```{r}
+model <- glm(Outcome ~ ., data = diab, family = "binomial")
+
+summary(model)
+
+```
+
+##### The logistic regression model appears to have a good fit, as indicated by the significant reduction in deviance from the null model (993.48) to the final model (723.45) on 759 degrees of freedom. The model uses the binary outcome variable "Outcome" to predict the probability of having diabetes based on several predictor variables such as "Pregnancies", "Glucose", "BloodPressure", "BMI", "DiabetesPedigreeFunction", and "Age".
+
+##### The intercept of the model is -8.4046964 and the coefficients for the predictor variables are all significant, except for "SkinThickness" and "Insulin" which do not appear to be significant in predicting the outcome. The coefficient estimates suggest that the odds of having diabetes increase with the number of pregnancies, glucose levels, BMI, DiabetesPedigreeFunction, and age, but decrease with blood pressure.
+
+##### Overall, the model suggests that the predictor variables are significantly associated with the outcome variable, and may be useful for predicting the probability of having diabetes in individuals with similar characteristics.
+
+#### 3. Select the best subset of variables. Perform a diagnostic on the best model.  Perform all possible inferences you can think about.
+
+##### a. Forward selection:
+
+```{r}
+null.model <- glm(Outcome ~ 1, family = "binomial", data = diab)
+
+diab_vars <- diab[, !colnames(diab) %in% "Outcome"]
+
+final.model <- step(null.model, direction = "forward", scope = formula(diab_vars), 
+                     data = diab, k = log(nrow(diab)), trace = 0)
+
+summary(final.model)
+```
+
+##### The forward selection has resulted in a final model with four predictor variables: Glucose, BMI, Age, and DiabetesPedigreeFunction.
+
+##### The intercept term has an estimated coefficient of -8.654488, which is the log odds of the outcome when all the predictor variables are equal to zero. All the predictor variables have a positive estimated coefficient, meaning that an increase in the value of these variables is associated with an increase in the log odds of the outcome.
+
+##### The coefficients for Glucose, BMI, and Age are all statistically significant, as indicated by their low p-values. The coefficients for Glucose and Age have the highest absolute value, indicating that they have the strongest association with the outcome. The deviance residuals are also low, indicating that the model is a good fit for the data.
+
+##### In summary, this model suggests that DiabetesPedigreeFunction, Glucose, BMI, and Age are all significant predictors of the outcome.
+
+##### b. Backward elimination
+
+```{r}
+full.model <- glm(Outcome ~ ., data = diab, family = "binomial")
+
+# Perform backward elimination 
+final.model <- step(full.model, direction = "backward", data = diab, k = log(nrow(diab)), trace = 0)
+
+# Print the summary of the final model
+summary(final.model)
+```
+
+##### The summary of the final model obtained from backwards elimination shows that the outcome variable is regressed on four predictor variables: DiabetesPedigreeFunction, Pregnancies, Glucose, and  BMI. All predictor variables are statistically significant, as indicated by their p-values.
+
+##### The coefficients for each predictor variable can be interpreted as the estimated change in the log-odds of the outcome variable for a one-unit increase in the corresponding predictor variable, holding all other predictor variables constant. For example, the coefficient for Glucose is 0.033826, which means that for each one-unit increase in Glucose, the log-odds of having diabetes increases by an estimated 0.033826, holding all other predictor variables constant.
+
+##### The null deviance is the deviance of the null model, which is the model with only an intercept term. The residual deviance is the deviance of the final model. The difference between the null and residual deviances is used to calculate the percent of deviance explained by the model. The AIC (Akaike Information Criterion) is a measure of model fit that takes into account the number of parameters in the model. The lower the AIC, the better the model fit. In this case, the final model has an AIC of 744.31.
+
+##### c. Stepwise Regression
+
+```{r}
+full.model <- glm(Outcome ~ ., data = diab, family = "binomial")
+
+final.model <- step(full.model, direction = "both", data = diab, k = log(nrow(diab)), trace = 0)
+
+# Print the summary of the final model
+summary(final.model)
+```
+
+
+##### The results from stepwise regression suggest that the final model includes four predictor variables: DiabetesPedigreeFunction, Pregnancies, Glucose, and BMI. These variables were selected by either forward or backward selection, depending on the method used.
+
+##### The coefficients for each predictor variable are all positive, indicating that as the values of these variables increase, the log odds of having diabetes also increase. The largest coefficient belongs to DiabetesPedigreeFunction, followed by Pregnancies, Glucose, and BMI. This suggests that a family history of diabetes may be the strongest predictor of diabetes status, followed by the number of pregnancies, glucose level, and BMI.
+
+##### The null deviance (993.48) represents the difference between the deviance of a model with no predictor variables and the saturated model (i.e., a model with a predictor variable for each observation). The residual deviance (734.31) represents the difference between the deviance of the final model and the saturated model. A smaller residual deviance indicates a better fit of the model to the data.
+
+##### Overall, these results suggest that the final model is a good fit for the data and provides a useful tool for predicting diabetes status based on the four selected predictor variables.
+
+
+#### The backwards elimination had the lowest AIC value, 744.31. So the main features that will be used, based on the findings of the best subset of variables, are Pregnancies, Glucose, and BMI.
+
+#### 4. Use the new model (backward elimination) to make predictions.
+
+
+```{r}
+# Split the data into training and testing sets
+set.seed(123)
+train.index <- sample(nrow(diab), 0.7*nrow(diab))
+train <- diab[train.index, ]
+test <- diab[-train.index, ]
+
+# Fit the full model
+full.model <- glm(Outcome ~ ., data = train, family = "binomial")
+
+# Perform backward elimination 
+final.model <- step(full.model, direction = "backward", data = train, k = log(nrow(train)), trace = 0)
+
+summary(final.model)
+
+# Make predictions on the test set
+test.pred <- predict(final.model, newdata = test, type = "response")
+test.pred <- ifelse(test.pred > 0.5, 1, 0)
+
+
+accuracy <- sum(test$Outcome == test.pred) / nrow(test)
+cat("Accuracy:", round(accuracy, 2))
+
+```
+
+##### The model equation is: 
+##### log odds of Outcome = -7.997 + 0.124 x Pregnancies + 0.034 x Glucose + 0.080 x BMI
+
+##### The intercept represents the log odds of the outcome when all the predictor variables are equal to 0. The coefficients for Pregnancies, Glucose, and BMI represent the change in log odds of the outcome for a one-unit increase in the corresponding predictor variable, holding all other variables constant. The p-values for all the predictor variables are less than 0.05, indicating that they are statistically significant predictors of the outcome. The null deviance represents the deviance of the model with no predictors, while the residual deviance represents the deviance of the model with the predictor variables included. The difference between these two values (171.08) represents the reduction in deviance due to the inclusion of the predictor variables, which indicates that the model fits the data well. Overall, the model suggests that the number of Pregnancies, Glucose level, and BMI are significant predictors of the "Outcome" column.
+
+##### The accuracy of the model after prediction is 0.76. This means that the model correctly predicted the outcome of 76% of the cases.
+
+
+#### 5. Use different pi_0 as a cut-off point and create a confusion table.
+
+##### I will be using the test data set for this portion since it's not speicified.
+```{r}
+
+full.model.test <- glm(Outcome ~ ., data = test, family = "binomial")
+
+final.model.test <- step(full.model.test, direction = "backward", data = test, k = log(nrow(test)), trace = 0)
+summary(final.model.test)
+
+# Predict probabilities of positive class
+probs <- predict(final.model.test, type = "response")
+
+# Create a sequence of pi_0 values to use as cut-off points
+pi_0_seq <- seq(0, 1, by = 0.05)
+
+# Create an empty list to store confusion tables for each pi_0 value
+conf_table_list <- vector("list", length(pi_0_seq))
+
+# Loop through each pi_0 value and create a confusion table
+for (i in 1:length(pi_0_seq)) {
+  pi_0 <- pi_0_seq[i]
+  pred <- ifelse(probs > pi_0, 1, 0)
+  conf_table <- table(pred, test$Outcome)
+  conf_table_list[[i]] <- conf_table
+}
+
+# Print the confusion table for each pi_0 value
+for (i in 1:length(pi_0_seq)) {
+  pi_0 <- pi_0_seq[i]
+  conf_table <- conf_table_list[[i]]
+  cat("Confusion table for pi_0 =", pi_0, "\n")
+  print(conf_table)
+}
+
+
+```
+
+
+#### 6. Perform visualization of data and models. 
+
+##### a. Histogram of Age
+```{r}
+hist(diab$Age, breaks = 10, main = "Histogram of Age", xlab = "Age")
+```
+
+##### Early 20s seem to be the highest frequency
+
+##### b. Boxplot of BMI by Outcome:
+```{r}
+boxplot(BMI ~ Outcome, data = diab, main = "BMI by Outcome", xlab = "Outcome", ylab = "BMI")
+
+```
+
+##### There are some higher BMI outliers for people who do have diabetes
+
+##### c. Bar Plot of Outcome Frequency:
+
+```{r}
+barplot(table(diab$Outcome), main = "Outcome Frequency", xlab = "Outcome", ylab = "Frequency")
+
+```
+
+##### The patients of the dataset are twice as likely to not have diabetes than to not have diabetes. 
+
+##### d. Scatterplot of BMI vs. DiabetesPedigreeFunction with Outcome Color-Coded:
+
+```{r}
+
+plot(diab$BMI, diab$DiabetesPedigreeFunction, col = ifelse(diab$Outcome == "1", "blue", "red"), 
+     main = "BMI vs. DiabetesPedigreeFunction", xlab = "BMI", ylab = "DiabetesPedigreeFunction")
+```
+
+
+##### It looks like there's a pattern that the blue overlaps with the red meaning that patients with familial history of diabetes, also have a similar BMI. 
+
+
+#### 7. Plot the ROC curve, find AUC, and the best cutoff point for classification.
+
+
+```{r}
+
+# Fit a logistic regression model
+fit <- glm(Outcome ~ DiabetesPedigreeFunction + Glucose + BMI + Age, data = diab, family = "binomial")
+
+# Predict the probabilities of having diabetes for each individual in the dataset
+probs <- predict(fit, type = "response")
+
+# Create a ROC curve
+library(pROC)
+roc <- roc(diab$Outcome, probs)
+
+# Plot the ROC curve
+plot(roc, main = "ROC Curve for Diabetes", print.thres = "best")
+
+# Calculate the AUC
+auc <- auc(roc)
+cat("AUC:", auc, "\n")
+
+# Find the best cutoff point for classification
+coords <- coords(roc, "best", ret = c("threshold", "specificity", "sensitivity"))
+cat("Best cutoff point:", coords$threshold, "\n")
+
+```
+
+
+##### The AUC is 0.8288, which suggests that the model has moderate to good discriminatory power.
+
+##### The best cutoff point is 0.3446, which means that if we use this threshold to classify the observations, any observation with a predicted probability greater than or equal to 0.3446 will be classified as positive (diabetic) and any observation with a predicted probability less than 0.3446 will be classified as negative (not diabetic).
+
+#### 8. Perform LOOCV and k-fold cross-validation.
+
+```{r}
+library(caret)
+set.seed(123)
+trainIndex <- createDataPartition(diab$Outcome, p = 0.7, list = FALSE)
+trainData <- diab[trainIndex, ]
+testData <- diab[-trainIndex, ]
+
+# LOOCV
+loocvCtrl <- trainControl(method = "LOOCV")
+
+# k-fold cross-validation
+kfoldCtrl <- trainControl(method = "cv", number = 10)
+
+trainData$Outcome <- factor(trainData$Outcome, levels = c('0','1'))
+
+
+
+
+# Fit a logistic regression model using LOOCV
+loocvModel <- train(Outcome ~ DiabetesPedigreeFunction + Glucose + BMI + Age, data = trainData, method = "glm", family = "binomial", trControl = loocvCtrl)
+loocvPred <- predict(loocvModel, testData, type = "raw")
+
+loocvPred <- as.factor(loocvPred)
+testData$Outcome <- as.factor(testData$Outcome)
+loocvConfusionMatrix <- confusionMatrix(loocvPred, testData$Outcome)
+print(loocvConfusionMatrix)
+
+# Fit a logistic regression model using k-fold cross-validation
+kfoldModel <- train(Outcome ~ DiabetesPedigreeFunction + Glucose + BMI + Age, data = trainData, method = "glm", family = "binomial", trControl = kfoldCtrl)
+kfoldPred <- predict(kfoldModel, testData, type = "raw")
+kfoldConfusionMatrix <- confusionMatrix(kfoldPred, testData$Outcome)
+print(kfoldConfusionMatrix)
+
+
+```
+
+##### The results of LOOCV show that the logistic regression model achieved an accuracy of 0.7652, with a 95% confidence interval between 0.705 and 0.8184. This means that the model correctly classified 76.52% of the observations in the test set. The Kappa value of 0.458 indicates that the agreement between the predicted and actual values is fair, while the sensitivity of 0.8792 and specificity of 0.5556 show that the model is better at correctly identifying negative cases than positive cases. The positive predictive value (PPV) of 0.7844 means that out of all the cases predicted as positive by the model, 78.44% were actually positive, while the negative predictive value (NPV) of 0.7143 means that out of all the cases predicted as negative by the model, 71.43% were actually negative. The balanced accuracy of 0.7174 is the average of sensitivity and specificity, and represents the overall accuracy of the model. The Mcnemar's Test P-Value of 0.0207 indicates that there is a significant difference between the observed and expected classification errors.
+
+##### The k-fold cross-validation results show an accuracy of 0.7652, indicating that the model can correctly predict the outcome of 76.52% of the test samples. The sensitivity of the model is 0.8792, meaning that the model can correctly identify 87.92% of the individuals who have diabetes, while the specificity of the model is 0.5556, indicating that the model can correctly identify 55.56% of the individuals who do not have diabetes. The positive predictive value of the model is 0.7844, meaning that when the model predicts an individual to have diabetes, there is a 78.44% chance that the individual actually has diabetes. The negative predictive value of the model is 0.7143, meaning that when the model predicts an individual not to have diabetes, there is a 71.43% chance that the individual actually does not have diabetes.
+
+#### 9. Try the probit link and the identity links to model data.
+
+```{r}
+# Fit a probit regression model
+probit_model <- glm(Outcome ~ DiabetesPedigreeFunction + Glucose + BMI + Age, data = diab, family = binomial(link = "probit"))
+
+# Print the summary of the model
+summary(probit_model)
+```
+
+##### The summary output shows the estimated coefficients for the intercept and each predictor variable, along with their standard errors, z-values, and p-values. The intercept has a significant negative effect on the log odds of the binary outcome (p < 2e-16). DiabetesPedigreeFunction and Glucose have significant positive effects on the log odds of the binary outcome (p = 0.00966 and p < 2e-16, respectively), while BMI and Age also have significant positive effects on the log odds of the binary outcome (p = 3.97e-09 and p = 3.21e-05, respectively).
+
+##### The null deviance (993.48) represents the deviance of a model with only the intercept, while the residual deviance (750.63) represents the deviance of the fitted model. The lower residual deviance indicates that the model with the four predictor variables fits the data better than the null model with only the intercept. The AIC (760.63) is a measure of model fit that takes into account the number of parameters in the model, with lower values indicating better model fit.
+
+```{r}
+# Fit a GLM with an identity link function
+glm_identity <- glm(Outcome ~ DiabetesPedigreeFunction + Glucose + BMI + Age, 
+                    family = gaussian(link = "identity"), 
+                    data = diab)
+
+# View the summary of the model
+summary(glm_identity)
+```
+
+##### The coefficients for each predictor indicate the estimated change in the outcome variable associated with a one-unit increase in the predictor variable, holding all other predictors constant. All predictor variables are significant at the 0.05 level. The intercept of the model is estimated to be -0.939.
+
+##### The deviance residuals indicate how well the model fits the data, with smaller values indicating better fit. The null deviance of 174.48 and residual deviance of 125.82 suggest that the model explains a significant amount of the variability in the data. The AIC value of 802.25 suggests that this model has better fit than the probit model, which had an AIC value of 760.63.
+
+#### 10. Which model works better for this data?
+
+##### By comparing their goodness-of-fit measures, the binomial probit model has a lower AIC (760.63) compared to the Gaussian model with identity link which has an AIC of 802.25. This indicates that the probit model provides a better fit to the data than the identity link Gaussian model.
+
+#### 11. If you have grouped data, use the methods for contingency tables to analyze the data (Chi sq test, G^2, and so on if applicable).
+
+##### We do not have grouped data. 
